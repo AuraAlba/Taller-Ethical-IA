@@ -1,188 +1,237 @@
 # Taller: Auditoría de Sesgo y Documentación de Modelos de IA
 
-[![Fairness Audit CI](../../actions/workflows/fairness-audit.yml/badge.svg)](../../actions/workflows/fairness-audit.yml)
+[![Fairness Audit CI](https://github.com/<USUARIO>/<REPO>/actions/workflows/fairness-audit.yml/badge.svg)](https://github.com/<USUARIO>/<REPO>/actions/workflows/fairness-audit.yml)
 
-Taller práctico de 30 minutos para estudiantes de ingeniería y software.
-**No se entrena ningún modelo**: se audita uno ya existente a partir de sus predicciones.
+> ✏️ **Reemplaza `<USUARIO>/<REPO>` del badge por los de tu repositorio.**
+
+Taller práctico de 30 minutos. **No se entrena ningún modelo**: se audita uno ya
+existente a partir de sus predicciones, se integra la auditoría en CI y se
+documentan los resultados en una Model Card.
 
 ## 🎯 Objetivo
 
-Al finalizar el taller, el estudiante será capaz de:
+Al finalizar el taller serás capaz de:
 
-1. Calcular métricas de equidad (**Disparate Impact**, **Statistical Parity Difference**, **Equal Opportunity Difference**) a partir de un CSV de predicciones.
+1. Calcular métricas de equidad (**Disparate Impact**, **Statistical Parity Difference**,
+   **Equal Opportunity Difference**) a partir de un CSV de predicciones.
 2. Aplicar la **regla de los cuatro quintos** (DI ≥ 0.80) como criterio de aprobación.
-3. Integrar la auditoría como un **quality gate en CI/CD** (GitHub Actions).
+3. Usar la auditoría como **quality gate en CI/CD** con GitHub Actions.
 4. Documentar los hallazgos en una **Model Card**.
 
 ## 📁 Estructura
 
 ```
-├── .github/workflows/fairness-audit.yml   # CI
-├── data/model_predictions.csv             # Dataset a auditar (sesgado a propósito)
-├── scripts/calculate_audit.py             # Script de auditoría
+├── .github/workflows/fairness-audit.yml   # CI (no modificar)
+├── data/model_predictions.csv             # Dataset a auditar
+├── scripts/calculate_audit.py             # Script con 2 TODO por implementar
 ├── tests/                                 # Tests del script + datasets de referencia
-├── MODEL_CARD_TEMPLATE.md                 # Plantilla a completar
-└── docs/img/                              # Capturas de CI
+├── MODEL_CARD_TEMPLATE.md                 # Plantilla de la Model Card
+└── docs/img/                              # Aquí van tus capturas
 ```
 
-## ⚙️ Instalación
+## 🚀 Cómo empezar
 
-Requiere Python 3.9+.
+1. Pulsa **"Use this template" → "Create a new repository"** (privado) y comparte el acceso con el docente.
+2. Clona tu repositorio. Si tu repo es un _fork_ y la pestaña **Actions** aparece deshabilitada, actívala.
+3. Instala las dependencias (Python 3.9+):
 
 ```bash
-git clone <URL-DE-TU-REPO>
-cd bias-audit-workshop
-
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
 pip install -r requirements-dev.txt
 ```
 
 ## ▶️ Ejecución
 
 ```bash
-python scripts/calculate_audit.py                       # audita data/model_predictions.csv
-python scripts/calculate_audit.py --data <otro.csv>     # audita otro archivo
-pytest -v                                               # tests del script
-echo $?                                                 # 0 = aprueba, 1 = viola la regla 4/5
+python scripts/calculate_audit.py                    # audita data/model_predictions.csv
+python scripts/calculate_audit.py --data <otro.csv>  # audita otro archivo
+pytest -v                                            # tests del script
+echo $?                                              # 0 = aprueba, 1 = viola la regla 4/5
 ```
 
-## 🤖 Integración continua (CI)
+---
 
-El workflow tiene **dos jobs con propósitos distintos**:
+## 📝 Pasos del taller
 
-| Job             | Qué verifica                                                                                             | Resultado esperado                 |
-| --------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `unit-tests`    | Que **el script** calcula bien (DI, SPD, EOD, códigos de salida) con datasets fijos en `tests/fixtures/` | ✅ Siempre verde                   |
-| `fairness-gate` | Que **el modelo** en `data/model_predictions.csv` cumple DI ≥ 0.80                                       | ❌ Rojo al inicio, ✅ tras mitigar |
+### Paso 1. Ejecuta el script tal como está
 
-> **¿Por qué hay un check en rojo?** El script no está roto: está funcionando.
-> Detecta que el _modelo_ es sesgado y devuelve `exit 1`, lo que hace fallar el job.
-> Es exactamente el comportamiento deseado en MLOps: un modelo discriminatorio no pasa a producción.
+Corre el script sin modificar nada. Las métricas SPD y EOD deben aparecer como `PENDIENTE`.
 
-### Flujo del taller (rojo → verde)
+**Evidencia 1: salida en consola (TODOs pendientes):**
 
-1. Haz push con el dataset original → `fairness-gate` ❌ (evidencia 1).
-2. Aplica una mitigación. Para la demo, simúlala así:
-   ```bash
-   cp tests/fixtures/fair_predictions.csv data/model_predictions.csv
-   ```
-3. Haz push de nuevo → ambos jobs ✅ (evidencia 2).
+```
+[PEGA AQUÍ LA SALIDA COMPLETA]
+```
 
-### 📸 Evidencias de CI
+### Paso 2. Implementa los TODO
 
-> Los estudiantes deben capturar sus propias pantallas desde la pestaña **Actions** de su repo
-> y guardarlas en `docs/img/`.
+En `scripts/calculate_audit.py` implementa:
 
-| #   | Captura                                  | Archivo                        | Qué debe verse                                                    |
-| --- | ---------------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
-| 1   | Compuerta en rojo con el dataset sesgado | `docs/img/ci-1-gate-rojo.png`  | `unit-tests` ✅ y `fairness-gate` ❌                              |
-| 2   | Log del job fallido                      | `docs/img/ci-2-log-alerta.png` | Mensaje "VIOLACIÓN DE LA REGLA DE LOS CUATRO QUINTOS", DI = 0.333 |
-| 3   | Compuerta en verde tras mitigar          | `docs/img/ci-3-gate-verde.png` | Ambos jobs ✅                                                     |
-| 4   | Pestaña _Summary_                        | `docs/img/ci-4-summary.png`    | Tabla con DI, SPD, EOD                                            |
+- **TODO 1**: `equal_opportunity_difference` (TPR_min − TPR_maj)
+- **TODO 2**: `statistical_parity_difference` (rate_min − rate_maj)
+
+Verifica con `pytest -v`: los tests de SPD y EOD deben pasar de _skipped_ a _passed_.
+
+**Evidencia 2: salida de `pytest -v` con TODOs implementados:**
+
+```
+[PEGA AQUÍ LA SALIDA]
+```
+
+**Evidencia 3: salida en consola sobre el dataset sesgado (TODOs implementados):**
+
+```
+[PEGA AQUÍ LA SALIDA COMPLETA]
+```
+
+### Paso 3. Primer push: la compuerta debe fallar
+
+```bash
+git add . && git commit -m "Implementa SPD y EOD" && git push
+```
+
+Ve a la pestaña **Actions** de tu repositorio.
+
+> **¿Por qué hay un check en rojo?** El script no está roto. Detecta que el _modelo_
+> es sesgado y devuelve `exit 1`. Eso es exactamente lo que debe hacer un quality gate.
+
+| #   | Captura                   | Guárdala como                    | Qué debe verse                        |
+| --- | ------------------------- | -------------------------------- | ------------------------------------- |
+| 1   | Resumen del workflow      | `docs/img/ci-1-gate-rojo.png`    | `unit-tests` ✅ y `fairness-gate` ❌  |
+| 2   | Log del job fallido       | `docs/img/ci-2-log-alerta.png`   | Mensaje de violación y el valor de DI |
+| 3   | Pestaña _Summary_ del run | `docs/img/ci-3-summary-rojo.png` | Tabla con DI, SPD y EOD               |
 
 ![CI en rojo](docs/img/ci-1-gate-rojo.png)
 ![Log de alerta](docs/img/ci-2-log-alerta.png)
-![CI en verde](docs/img/ci-3-gate-verde.png)
-![Resumen](docs/img/ci-4-summary.png)
+![Summary en rojo](docs/img/ci-3-summary-rojo.png)
+
+### Paso 4. Mitigación simulada
+
+Simula que el equipo de desarrollo corrigió el modelo (por ejemplo, ajustando el umbral de decisión del grupo minoritario):
+
+```bash
+cp tests/fixtures/fair_predictions.csv data/model_predictions.csv
+```
+
+**Evidencia 4: salida en consola tras la mitigación:**
+
+```
+[PEGA AQUÍ LA SALIDA COMPLETA]
+```
+
+### Paso 5. Segundo push: la compuerta debe pasar
+
+```bash
+git add . && git commit -m "Aplica mitigación simulada" && git push
+```
+
+| #   | Captura                   | Guárdala como                     | Qué debe verse      |
+| --- | ------------------------- | --------------------------------- | ------------------- |
+| 4   | Resumen del workflow      | `docs/img/ci-4-gate-verde.png`    | Ambos jobs ✅       |
+| 5   | Pestaña _Summary_ del run | `docs/img/ci-5-summary-verde.png` | Tabla con DI ≥ 0.80 |
+
+![CI en verde](docs/img/ci-4-gate-verde.png)
+![Summary en verde](docs/img/ci-5-summary-verde.png)
 
 ---
 
 ## 🧠 Reflexión
 
-### Salida en consola (dataset sesgado: `data/model_predictions.csv`)
+### A. Resultados
+
+Completa con los valores de tu ejecución.
+
+| Métrica                     | Dataset sesgado | Tras mitigación |
+| --------------------------- | --------------- | --------------- |
+| Accuracy global             | \_\_\_          | \_\_\_          |
+| Tasa de aceptación, grupo 0 | \_\_\_          | \_\_\_          |
+| Tasa de aceptación, grupo 1 | \_\_\_          | \_\_\_          |
+| TPR, grupo 0                | \_\_\_          | \_\_\_          |
+| TPR, grupo 1                | \_\_\_          | \_\_\_          |
+| FPR, grupo 0                | \_\_\_          | \_\_\_          |
+| FPR, grupo 1                | \_\_\_          | \_\_\_          |
+| **Disparate Impact (DI)**   | \_\_\_          | \_\_\_          |
+| **SPD**                     | \_\_\_          | \_\_\_          |
+| **EOD**                     | \_\_\_          | \_\_\_          |
+| ¿Pasa la regla 4/5?         | ☐ Sí ☐ No       | ☐ Sí ☐ No       |
+
+Muestra el cálculo manual de las tres métricas del dataset sesgado:
 
 ```
-Registros cargados: 24
-
-Accuracy global: 62.5%
-Tasa de aceptación - Grupo mayoritario (0): 75.0%
-Tasa de aceptación - Grupo minoritario (1): 25.0%
-
-Matriz de confusión - Grupo Mayoritario (0):
-   TN=2  FP=3  FN=1  TP=6
-   TPR (Recall) = 85.7%   FPR = 60.0%
-
-Matriz de confusión - Grupo Minoritario (1):
-   TN=4  FP=0  FN=5  TP=3
-   TPR (Recall) = 37.5%   FPR = 0.0%
-
---- Métricas de equidad ---
-Disparate Impact Ratio (DI):          0.333
-Statistical Parity Difference (SPD):  -0.500
-Equal Opportunity Difference (EOD):   -0.482
-(!) Brecha mayor a 0.10 en SPD y/o EOD: revisar. ...
-
-============================================================
-🚨 ALERTA: VIOLACIÓN DE LA REGLA DE LOS CUATRO QUINTOS 🚨
-   DI = 0.333  <  umbral = 0.80
-   El modelo presenta IMPACTO DISPAR contra el grupo minoritario.
-   Acción: devolver a desarrollo para mitigación de sesgos.
-============================================================
+DI  = ___ / ___ = ___
+SPD = ___ − ___ = ___
+EOD = ___ − ___ = ___
 ```
 
-### Salida tras la mitigación simulada (`tests/fixtures/fair_predictions.csv`)
+### B. Preguntas
 
-```
-Accuracy global: 75.0%
-Tasa de aceptación - Grupo mayoritario (0): 75.0%
-Tasa de aceptación - Grupo minoritario (1): 66.7%
-   Grupo 0: TN=2 FP=3 FN=1 TP=6   TPR=85.7%  FPR=60.0%
-   Grupo 1: TN=3 FP=1 FN=1 TP=7   TPR=87.5%  FPR=25.0%
-DI = 0.889   SPD = -0.083   EOD = +0.018
-✅ APROBADO: el modelo cumple la regla de los cuatro quintos.
-```
+**1. ¿La EOD coincide con la conclusión del DI? ¿Miden lo mismo? Justifica.**
 
-### Cálculos
+> [Tu respuesta]
 
-| Métrica          | Fórmula             | Cálculo       | Resultado  |
-| ---------------- | ------------------- | ------------- | ---------- |
-| **DI**           | rate_min / rate_maj | 0.25 / 0.75   | **0.333**  |
-| **SPD** (TODO 2) | rate_min − rate_maj | 0.25 − 0.75   | **−0.500** |
-| **EOD** (TODO 1) | TPR_min − TPR_maj   | 0.375 − 0.857 | **−0.482** |
+**2. Calcula qué proporción de cada grupo está realmente calificada (`true_label = 1`). ¿La brecha de aceptación se explica por mérito?**
 
-### ¿Coincide la EOD con la conclusión del DI?
+> [Tu respuesta, con los números]
 
-**Sí.** Las tres métricas señalan en la misma dirección: el Grupo 1 sale perjudicado.
-Aun así, miden cosas distintas:
+**3. ¿Cuántas personas calificadas del grupo 1 fueron rechazadas (FN)? ¿Qué implica en un caso real?**
 
-- **DI y SPD** miran solo _cuántos_ son aceptados, sin considerar si merecían serlo.
-- **EOD** compara a las personas _realmente calificadas_ (`true_label = 1`) de cada grupo.
+> [Tu respuesta]
 
-Que coincidan aquí refuerza la conclusión, pero no siempre ocurre.
+**4. Compara el FPR de ambos grupos. ¿Qué dice sobre los estándares que aplica el modelo a cada uno?**
 
-### ¿Qué podemos inferir?
+> [Tu respuesta]
 
-1. **La brecha no se explica por mérito.** El 66.7% del Grupo 1 está realmente calificado (8/12), frente al 58.3% del Grupo 0 (7/12). El grupo con _más_ personas calificadas es el que menos se acepta.
-2. **El modelo rechaza talento.** De 8 personas calificadas del Grupo 1, 5 fueron rechazadas (FN). Es un daño directo, no solo una diferencia estadística.
-3. **Estándares asimétricos.** El FPR del Grupo 0 es 60% y el del Grupo 1 es 0%. El modelo es permisivo con el mayoritario (acepta a 3 no calificados) y excesivamente estricto con el minoritario. Esto también viola _equalized odds_.
-4. **El accuracy global (62.5%) esconde el problema.** Por sí solo no revela la inequidad: hay que desagregar por grupo.
-5. **Cautela:** con 12 registros por grupo, cambiar una sola predicción mueve la tasa 8.3 puntos porcentuales. Los datos son simulados y con fines didácticos; en un caso real se requiere mayor muestra e intervalos de confianza.
+**5. El accuracy global puede verse aceptable aunque el modelo sea inequitativo. ¿Por qué ocurre?**
 
-### Conclusión: auditoría vs. Model Cards
+> [Tu respuesta]
 
-Los valores de ejemplo de la plantilla (entre corchetes) frente a lo que arrojó la auditoría:
+**6. El dataset tiene solo 12 registros por grupo. ¿Qué limitaciones tiene esta auditoría?**
 
-| Métrica                          | Ejemplo en la plantilla | Obtenido en la auditoría | Observación                             |
-| -------------------------------- | ----------------------- | ------------------------ | --------------------------------------- |
-| Accuracy global                  | 88%                     | **62.5%**                | No cumple el umbral > 85%               |
-| Tasa de aprobación (mayoritario) | 75%                     | **75.0%**                | Coincide                                |
-| Tasa de aprobación (minoritario) | 32%                     | **25.0%**                | La brecha real es mayor a la supuesta   |
-| TPR (mayoritario)                | 86%                     | **85.7%**                | Coincide                                |
-| TPR (minoritario)                | 38%                     | **37.5%**                | Coincide                                |
-| Disparate Impact                 | 0.42                    | **0.333**                | Violación más severa que la del ejemplo |
+> [Tu respuesta]
 
-Los ejemplos de la plantilla eran **hipótesis optimistas**. Al ejecutar el script, el modelo resultó peor en accuracy (62.5% vs. 88%) y en equidad (DI 0.333 vs. 0.42). Esto demuestra por qué una Model Card no debe llenarse con valores estimados: **debe completarse con la salida real de la auditoría**, y su conclusión debe ser coherente con ella.
+**7. Propón dos mitigaciones técnicas reales (no la simulada) y un riesgo de cada una.**
 
-**Decisión documentada:** el modelo original **no es apto para despliegue** y vuelve a desarrollo.
-Mitigaciones recomendadas: re-ponderación de muestras, ajuste de umbrales por grupo, revisión de variables proxy y supervisión humana para los rechazos.
+> [Tu respuesta]
 
-> ✍️ **Tu turno:** completa `MODEL_CARD_TEMPLATE.md` con tus resultados y verifica que
-> tu "Conclusión de la Auditoría" sea consistente con el DI, SPD y EOD obtenidos.
+### C. Conclusión: auditoría vs. Model Card
 
-## 📦 Entregables
+Compara los valores que escribiste en tu `MODEL_CARD.md` antes de ejecutar el script
+(tus hipótesis) con los obtenidos en la auditoría.
 
-- [ ] `MODEL_CARD_TEMPLATE.md` completada con los valores reales
-- [ ] Capturas de CI en `docs/img/` (rojo y verde)
-- [ ] Respuestas de la sección Reflexión
+| Métrica                     | Hipótesis (antes) | Obtenido (auditoría) | ¿Coincide? |
+| --------------------------- | ----------------- | -------------------- | ---------- |
+| Accuracy global             | \_\_\_            | \_\_\_               | \_\_\_     |
+| Tasa de aprobación, grupo 0 | \_\_\_            | \_\_\_               | \_\_\_     |
+| Tasa de aprobación, grupo 1 | \_\_\_            | \_\_\_               | \_\_\_     |
+| Disparate Impact            | \_\_\_            | \_\_\_               | \_\_\_     |
+
+**Conclusión (máx. 5 líneas):** ¿Qué te enseña esta comparación sobre llenar una Model Card con estimaciones frente a datos reales? ¿Es apto el modelo original para despliegue?
+
+> [Tu conclusión]
+
+---
+
+## 📋 Model Card
+
+1. Copia la plantilla: `cp MODEL_CARD_TEMPLATE.md MODEL_CARD.md`
+2. Complétala con los resultados **reales** de tu auditoría sobre el dataset sesgado.
+3. Verifica que la "Conclusión de la Auditoría" sea coherente con DI, SPD y EOD.
+
+## ✅ Checklist de entrega
+
+- [ ] TODO 1 y TODO 2 implementados; `pytest -v` sin _skipped_ ni fallos
+- [ ] Evidencias 1 a 4 (salidas de consola) pegadas arriba
+- [ ] 5 capturas de CI en `docs/img/` (3 en rojo, 2 en verde) y visibles en este README
+- [ ] Sección Reflexión completa (A, B y C)
+- [ ] `MODEL_CARD.md` completada
+- [ ] Repositorio compartido con el docente
+
+## 🧮 Rúbrica sugerida
+
+| Criterio                                               | Puntos |
+| ------------------------------------------------------ | ------ |
+| Implementación correcta de SPD y EOD (tests en verde)  | 25     |
+| Evidencias de CI (rojo y verde, con capturas legibles) | 25     |
+| Reflexión: interpretación correcta de las métricas     | 25     |
+| Model Card completa y coherente con la auditoría       | 25     |

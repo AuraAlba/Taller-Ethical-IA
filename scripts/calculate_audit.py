@@ -13,6 +13,9 @@ Uso:
 Código de salida:
     0 -> el modelo pasa la regla de los 4/5
     1 -> violación detectada (el CI marca el check en rojo)
+
+TU TRABAJO: implementar los dos TODO marcados más abajo
+(statistical_parity_difference y equal_opportunity_difference).
 """
 
 import argparse
@@ -28,10 +31,10 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 # --------------------------------------------------------------------------
 DEFAULT_DATA = Path(__file__).resolve().parent.parent / "data" / "model_predictions.csv"
 
-MAJORITY_GROUP = 0      # valor de `protected_group` para el grupo mayoritario
-MINORITY_GROUP = 1      # valor de `protected_group` para el grupo minoritario
-DI_THRESHOLD = 0.80     # regla de los cuatro quintos (80%)
-GAP_WARNING = 0.10      # |SPD| o |EOD| mayores a esto se marcan como brecha relevante
+MAJORITY_GROUP = 0  # valor de `protected_group` para el grupo mayoritario
+MINORITY_GROUP = 1  # valor de `protected_group` para el grupo minoritario
+DI_THRESHOLD = 0.80  # regla de los cuatro quintos (80%)
+GAP_WARNING = 0.10  # |SPD| o |EOD| mayores a esto se marcan como brecha relevante
 
 REQUIRED_COLUMNS = {"id", "true_label", "predicted_label", "protected_group"}
 
@@ -65,7 +68,7 @@ def group_confusion(df: pd.DataFrame, group: int) -> dict:
     tn, fp, fn, tp = confusion_matrix(
         group_df["true_label"],
         group_df["predicted_label"],
-        labels=[0, 1],          # fuerza matriz 2x2 aunque falte una clase
+        labels=[0, 1],  # fuerza matriz 2x2 aunque falte una clase
     ).ravel()
     tn, fp, fn, tp = int(tn), int(fp), int(fn), int(tp)
 
@@ -92,14 +95,27 @@ def disparate_impact_ratio(rate_minority: float, rate_majority: float) -> float:
 
 
 def statistical_parity_difference(rate_minority: float, rate_majority: float) -> float:
-    """SPD = P(Y_hat=1 | minoritario) - P(Y_hat=1 | mayoritario). Ideal: 0."""
-    return rate_minority - rate_majority
+    """
+    TODO 2: Statistical Parity Difference.
+
+        SPD = P(Y_hat=1 | minoritario) - P(Y_hat=1 | mayoritario)
+
+    Valor ideal: 0. Un valor negativo indica que el grupo minoritario
+    es aceptado con menor frecuencia.
+    """
+    raise NotImplementedError("TODO 2: implementa la Statistical Parity Difference")
 
 
 def equal_opportunity_difference(tpr_minority: float, tpr_majority: float) -> float:
-    """EOD = TPR_min - TPR_maj. Ideal: 0. Negativo = el minoritario recibe menos
-    aceptaciones entre las personas realmente calificadas."""
-    return tpr_minority - tpr_majority
+    """
+    TODO 1: Equal Opportunity Difference.
+
+        EOD = TPR_min - TPR_maj
+
+    Valor ideal: 0. Compara solo a las personas realmente calificadas
+    (true_label = 1) de cada grupo.
+    """
+    raise NotImplementedError("TODO 1: implementa la Equal Opportunity Difference")
 
 
 # --------------------------------------------------------------------------
@@ -125,6 +141,11 @@ def check_four_fifths_rule(di: float, threshold: float = DI_THRESHOLD) -> bool:
 # --------------------------------------------------------------------------
 # UTILIDAD CI: resumen en la pestaña "Summary" de GitHub Actions
 # --------------------------------------------------------------------------
+def _fmt(value, spec: str) -> str:
+    """Formatea un número, o devuelve 'pendiente' si el TODO no está resuelto."""
+    return "pendiente" if value is None else format(value, spec)
+
+
 def write_github_summary(results: dict, passed: bool) -> None:
     """Si corre dentro de GitHub Actions, añade una tabla Markdown al resumen del job."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -141,8 +162,8 @@ def write_github_summary(results: dict, passed: bool) -> None:
         f"| Tasa de aceptación (mayoritario) | {results['rate_maj']:.1%} |",
         f"| Tasa de aceptación (minoritario) | {results['rate_min']:.1%} |",
         f"| Disparate Impact (DI) | {results['di']:.3f} |",
-        f"| Statistical Parity Difference | {results['spd']:+.3f} |",
-        f"| Equal Opportunity Difference | {results['eod']:+.3f} |",
+        f"| Statistical Parity Difference | {_fmt(results['spd'], '+.3f')} |",
+        f"| Equal Opportunity Difference | {_fmt(results['eod'], '+.3f')} |",
         "",
     ]
     with open(summary_path, "a", encoding="utf-8") as f:
@@ -154,10 +175,18 @@ def write_github_summary(results: dict, passed: bool) -> None:
 # --------------------------------------------------------------------------
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Auditoría de sesgo (regla 4/5).")
-    parser.add_argument("--data", type=Path, default=DEFAULT_DATA,
-                        help="CSV con id, true_label, predicted_label, protected_group")
-    parser.add_argument("--threshold", type=float, default=DI_THRESHOLD,
-                        help="Umbral mínimo de DI (por defecto 0.80)")
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=DEFAULT_DATA,
+        help="CSV con id, true_label, predicted_label, protected_group",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=DI_THRESHOLD,
+        help="Umbral mínimo de DI (por defecto 0.80)",
+    )
     args = parser.parse_args(argv)
 
     df = load_data(args.data)
@@ -176,7 +205,10 @@ def main(argv=None) -> int:
 
     # --- Matrices de confusión por grupo ---
     conf = {}
-    for label, group in [("Mayoritario", MAJORITY_GROUP), ("Minoritario", MINORITY_GROUP)]:
+    for label, group in [
+        ("Mayoritario", MAJORITY_GROUP),
+        ("Minoritario", MINORITY_GROUP),
+    ]:
         m = group_confusion(df, group)
         conf[group] = m
         print(f"\nMatriz de confusión - Grupo {label} ({group}):")
@@ -185,24 +217,49 @@ def main(argv=None) -> int:
 
     # --- Métricas de equidad ---
     di = disparate_impact_ratio(rate_min, rate_maj)
-    spd = statistical_parity_difference(rate_min, rate_maj)
-    eod = equal_opportunity_difference(conf[MINORITY_GROUP]["TPR"],
-                                       conf[MAJORITY_GROUP]["TPR"])
+
+    try:
+        spd = statistical_parity_difference(rate_min, rate_maj)
+    except NotImplementedError:
+        spd = None
+    try:
+        eod = equal_opportunity_difference(
+            conf[MINORITY_GROUP]["TPR"], conf[MAJORITY_GROUP]["TPR"]
+        )
+    except NotImplementedError:
+        eod = None
 
     print("\n--- Métricas de equidad ---")
     print(f"Disparate Impact Ratio (DI):          {di:.3f}")
-    print(f"Statistical Parity Difference (SPD):  {spd:+.3f}")
-    print(f"Equal Opportunity Difference (EOD):   {eod:+.3f}")
-    if abs(spd) > GAP_WARNING or abs(eod) > GAP_WARNING:
-        print(f"(!) Brecha mayor a {GAP_WARNING:.2f} en SPD y/o EOD: revisar. "
-              "Estas dos métricas son informativas; la compuerta usa solo el DI.")
+    print(
+        f"Statistical Parity Difference (SPD):  "
+        f"{'PENDIENTE (TODO 2)' if spd is None else f'{spd:+.3f}'}"
+    )
+    print(
+        f"Equal Opportunity Difference (EOD):   "
+        f"{'PENDIENTE (TODO 1)' if eod is None else f'{eod:+.3f}'}"
+    )
+
+    if (spd is not None and abs(spd) > GAP_WARNING) or (
+        eod is not None and abs(eod) > GAP_WARNING
+    ):
+        print(
+            f"(!) Brecha mayor a {GAP_WARNING:.2f} en SPD y/o EOD: revisar. "
+            "Estas dos métricas son informativas; la compuerta usa solo el DI."
+        )
 
     # --- Veredicto (determina el código de salida) ---
     passed = check_four_fifths_rule(di, args.threshold)
 
     write_github_summary(
-        {"accuracy": accuracy, "rate_maj": rate_maj, "rate_min": rate_min,
-         "di": di, "spd": spd, "eod": eod},
+        {
+            "accuracy": accuracy,
+            "rate_maj": rate_maj,
+            "rate_min": rate_min,
+            "di": di,
+            "spd": spd,
+            "eod": eod,
+        },
         passed,
     )
     return 0 if passed else 1
