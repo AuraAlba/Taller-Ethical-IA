@@ -31,9 +31,48 @@ Al finalizar el taller serás capaz de:
 
 ## 🚀 Cómo empezar
 
-1. Pulsa **"Use this template" → "Create a new repository"** (privado) y comparte el acceso con el docente.
-2. Clona tu repositorio. Si tu repo es un _fork_ y la pestaña **Actions** aparece deshabilitada, actívala.
-3. Instala las dependencias (Python 3.9+):
+Cada estudiante trabaja en **su propio repositorio público**, porque el CI de GitHub Actions
+se ejecuta ahí. Clonar el repositorio del taller no basta: tu `git push` debe ir a tu repo, no al del docente.
+
+### 1. Crea tu repositorio vacío en GitHub
+
+1. Entra a <https://github.com/new>.
+2. Nómbralo, por ejemplo, `bias-audit-workshop`.
+3. Selecciona visibilidad **Public**.
+4. **No marques** "Add a README", ".gitignore" ni "license". El repo debe quedar vacío.
+5. Pulsa **Create repository**.
+
+### 2. Clona el taller y apunta al repo que creaste
+
+```bash
+git clone https://github.com/<USUARIO_DOCENTE>/<REPO_DEL_TALLER>.git bias-audit-workshop
+cd bias-audit-workshop
+
+git remote set-url origin https://github.com/<TU_USUARIO>/<TU_REPO>.git
+git branch -M main
+git push -u origin main
+```
+
+Verifica que apuntas a tu repo y no al del docente:
+
+```bash
+git remote -v      # debe mostrar TU usuario, no el del docente
+```
+
+### 3. Comprueba que el CI está activo
+
+1. Abre la pestaña **Actions** de tu repositorio.
+2. Debe aparecer un run de **Fairness Audit CI** disparado por tu primer push.
+3. Si ves un botón verde _"I understand my workflows, go ahead and enable them"_, púlsalo y relanza con **Run workflow**.
+
+> Este primer run es **esperado**: `unit-tests` ✅ (con 2 tests _skipped_) y
+> `fairness-gate` ❌. El modelo es sesgado a propósito; no es un error tuyo.
+
+### 4. Actualiza el badge
+
+Reemplaza `<USUARIO>/<REPO>` en la primera línea de este README por los tuyos.
+
+### 5. Instala las dependencias (Python 3.9+)
 
 ```bash
 python -m venv .venv
