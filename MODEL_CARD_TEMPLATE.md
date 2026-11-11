@@ -1,53 +1,42 @@
-# Model Card: [Nombre del Modelo / Sistema]
+# Model Card: Modelo de Evaluación de Riesgo / Selección
 
-> Plantilla basada en _Model Cards for Model Reporting_ (Mitchell et al., 2019).
-> Reemplaza todo el texto entre corchetes `[ ]` con información real.
+## 1. Detalles del Modelo
+- **Desarrollador:** Aura Milena Alba Suarez
+- **Versión del modelo:** 1.0.0 (Evaluación inicial de auditoría)
+- **Tipo de modelo:** Clasificador binario de evaluación y selección
+- **Licencia:** MIT
 
-## Model Details
+## 2. Uso Intencionado
+- **Casos de uso principales:** Selección y evaluación de candidatos / solicitudes.
+- **Usuarios intencionados:** Equipos de evaluación y tomadores de decisiones.
+- **Casos de uso no intencionados:** Toma de decisiones 100% automatizada sin supervisión humana en contextos de alto impacto socioeconómico.
 
-- **Developed by:** [Tu Nombre / Equipo]
-- **Model Date:** [Fecha de Creación]
-- **Model Version:** v1.0.0
-- **Model Type:** [Ej. Clasificador Binario / Random Forest]
-- **License:** MIT
-- **Contact:** [Correo o repositorio para reportar problemas]
+## 3. Datos de Evaluación
+- **Dataset evaluado:** `data/model_predictions.csv`
+- **Tamaño del dataset:** 24 registros en total (12 del grupo mayoritario, 12 del grupo minoritario)
+- **Atributo protegido:** `protected_group` (0 = Grupo Mayoritario, 1 = Grupo Minoritario)
 
-## Intended Use
+## 4. Métricas de Rendimiento Global
+- **Accuracy global:** 62.5%
 
-- **Primary Intended Uses:** [Para qué fue diseñado este modelo, ej. automatización inicial de filtrado de solicitudes].
-- **Primary Intended Users:** [Quién operará el sistema, ej. analistas de riesgo].
-- **Out-of-Scope Uses:** [Para qué NO debe usarse jamás, ej. decisiones judiciales, diagnósticos médicos definitivos o exclusión total sin supervisión humana].
+## 5. Auditoría de Equidad y Sesgo
+- **Tasa de aceptación - Grupo Mayoritario (0):** 75.0%
+- **Tasa de aceptación - Grupo Minoritario (1):** 25.0%
+- **TPR (Recall) - Grupo Mayoritario (0):** 85.7%
+- **TPR (Recall) - Grupo Minoritario (1):** 37.5%
+- **FPR - Grupo Mayoritario (0):** 60.0%
+- **FPR - Grupo Minoritario (1):** 0.0%
 
-## Training & Evaluation Data
+### Métricas Cuantitativas de Equidad
+| Métrica | Valor Obtenido | Umbral de Aprobación | Estado |
+| :--- | :---: | :---: | :---: |
+| **Disparate Impact Ratio (DI)** | 0.333 | $\ge 0.80$ (Regla 4/5) | ❌ Violación |
+| **Statistical Parity Difference (SPD)** | -0.500 | ideal 0.0 ($\pm 0.10$) | ❌ Brecha severa |
+| **Equal Opportunity Difference (EOD)** | -0.482 | ideal 0.0 ($\pm 0.10$) | ❌ Brecha severa |
 
-- **Dataset Overview:** [Descripción breve del dataset utilizado para su validación: origen, tamaño, periodo].
-- **Protected Attributes:** [Variables demográficas o sensibles consideradas en la auditoría, ej. `protected_group`].
-- **Group Definition:** [Qué representa 0 (mayoritario) y 1 (minoritario) en este caso].
+## 6. Conclusión de la Auditoría
+🚨 **NO APTO PARA DESPLIEGUE EN PRODUCCIÓN** 🚨
 
-## Quantitative Performance & Fairness Audit
+El modelo presenta una **violación crítica de la regla de los cuatro quintos** con un Disparate Impact de **0.333** (muy por debajo del umbral mínimo tolerable de 0.80). Adicionalmente, presenta un marcado doble rasero reflejado en el EOD (-0.482) y en las tasas de falsos positivos (FPR del 60.0% para la mayoría frente a 0.0% para la minoría), rechazando injustamente al 62.5% de las personas verdaderamente calificadas del grupo minoritario.
 
-_Resultados obtenidos tras ejecutar `scripts/calculate_audit.py`:_
-
-| Métrica                                    | Valor Obtenido | Umbral Objetivo |
-| :----------------------------------------- | :------------- | :-------------- |
-| **Accuracy Global**                        | _[Ej. 88%]_    | $> 85\%$        |
-| **Tasa de Aprobación (Grupo Mayoritario)** | _[Ej. 75%]_    | -               |
-| **Tasa de Aprobación (Grupo Minoritario)** | _[Ej. 32%]_    | -               |
-| **TPR / Recall (Grupo Mayoritario)**       | _[Ej. 86%]_    | -               |
-| **TPR / Recall (Grupo Minoritario)**       | _[Ej. 38%]_    | -               |
-| **Disparate Impact Ratio (DI)**            | _[Ej. 0.42]_   | **$\ge 0.80$**  |
-
-- **Resultado de la regla de los 4/5:** [ ] Aprobado [ ] Violación detectada
-- **Conclusión de la Auditoría:** [¿El modelo pasa la prueba de equidad o debe volver a desarrollo para mitigación de sesgos? Justifica en 2 líneas].
-
-## Ethical Considerations & Limitations
-
-- **Known Biases:** [¿Qué sesgos históricos arrastra el dataset que afectaron al modelo?].
-- **Limitations of this Audit:** [Ej. tamaño de muestra pequeño, un solo atributo protegido, sin análisis interseccional].
-- **Mitigations Applied / Recommended:** [Medidas técnicas tomadas o recomendadas: re-muestreo, re-ponderación, ajuste de umbrales por grupo, supervisión humana, etc.].
-
-## Sign-off
-
-- **Auditor:** [Nombre]
-- **Audit Date:** [Fecha]
-- **Decision:** [ ] Aprobado para despliegue [ ] Devuelto a desarrollo
+**Acción requerida:** El modelo debe retornar a la fase de desarrollo para la aplicación de técnicas de mitigación de sesgos (como re-sopesado de datos o calibración de umbrales por grupo) antes de cualquier reevaluación para pase a producción.

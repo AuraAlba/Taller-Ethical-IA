@@ -99,9 +99,7 @@ Corre el script sin modificar nada. Las métricas SPD y EOD deben aparecer como 
 
 **Evidencia 1: salida en consola (TODOs pendientes):**
 
-```
-[PEGA AQUÍ LA SALIDA COMPLETA]
-```
+![Evidencia 1 - Salida en consola con TODOs pendientes](images/evidencia1.png)
 
 ### Paso 2. Implementa los TODO
 
@@ -114,15 +112,11 @@ Verifica con `pytest -v`: los tests de SPD y EOD deben pasar de _skipped_ a _pas
 
 **Evidencia 2: salida de `pytest -v` con TODOs implementados:**
 
-```
-[PEGA AQUÍ LA SALIDA]
-```
+![Evidencia 2 - Salida de pytest en verde](images/evidencia2.png)
 
 **Evidencia 3: salida en consola sobre el dataset sesgado (TODOs implementados):**
 
-```
-[PEGA AQUÍ LA SALIDA COMPLETA]
-```
+![Evidencia 3 - Salida en consola sobre el dataset sesgado](images/evidencia3.png)
 
 ### Paso 3. Primer push: la compuerta debe fallar
 
@@ -155,9 +149,7 @@ cp tests/fixtures/fair_predictions.csv data/model_predictions.csv
 
 **Evidencia 4: salida en consola tras la mitigación:**
 
-```
-[PEGA AQUÍ LA SALIDA COMPLETA]
-```
+![Evidencia 4 - Salida en consola tras la mitigación](images/evidencia4.png)
 
 ### Paso 5. Segundo push: la compuerta debe pasar
 
@@ -179,75 +171,113 @@ git add . && git commit -m "Aplica mitigación simulada" && git push
 
 ### A. Resultados
 
-Completa con los valores de tu ejecución.
-
 | Métrica                     | Dataset sesgado | Tras mitigación |
 | --------------------------- | --------------- | --------------- |
-| Accuracy global             | \_\_\_          | \_\_\_          |
-| Tasa de aceptación, grupo 0 | \_\_\_          | \_\_\_          |
-| Tasa de aceptación, grupo 1 | \_\_\_          | \_\_\_          |
-| TPR, grupo 0                | \_\_\_          | \_\_\_          |
-| TPR, grupo 1                | \_\_\_          | \_\_\_          |
-| FPR, grupo 0                | \_\_\_          | \_\_\_          |
-| FPR, grupo 1                | \_\_\_          | \_\_\_          |
-| **Disparate Impact (DI)**   | \_\_\_          | \_\_\_          |
-| **SPD**                     | \_\_\_          | \_\_\_          |
-| **EOD**                     | \_\_\_          | \_\_\_          |
-| ¿Pasa la regla 4/5?         | ☐ Sí ☐ No       | ☐ Sí ☐ No       |
+| Accuracy global             | 62.5%           | 75.0%           |
+| Tasa de aceptación, grupo 0 | 75.0%           | 75.0%           |
+| Tasa de aceptación, grupo 1 | 25.0%           | 66.7%           |
+| TPR, grupo 0                | 85.7%           | 85.7%           |
+| TPR, grupo 1                | 37.5%           | 87.5%           |
+| FPR, grupo 0                | 60.0%           | 60.0%           |
+| FPR, grupo 1                | 0.0%            | 25.0%           |
+| Disparate Impact (DI)       | 0.333           | 0.889           |
+| SPD                         | -0.500          | -0.083          |
+| EOD                         | -0.482          | +0.018          |
+| ¿Pasa la regla 4/5?         | ☐ Sí ☑ No       | ☑ Sí ☐ No       |
 
-Muestra el cálculo manual de las tres métricas del dataset sesgado:
+### Cálculo manual de las tres métricas del dataset sesgado
 
-```
-DI  = ___ / ___ = ___
-SPD = ___ − ___ = ___
-EOD = ___ − ___ = ___
-```
+1\. Disparate Impact (DI)
+
+\\[ DI = \frac{0.250}{0.750} = \mathbf{0.333} \\]
+
+2\. Statistical Parity Difference (SPD)
+
+\\[ SPD = 0.250 - 0.750 = \mathbf{-0.500} \\]
+
+3\. Equal Opportunity Difference (EOD)
+
+\\[ EOD = 0.375 - 0.857 = \mathbf{-0.482} \\]
+
 
 ### B. Preguntas
 
 **1. ¿La EOD coincide con la conclusión del DI? ¿Miden lo mismo? Justifica.**
 
-> [Tu respuesta]
+Sí, en este caso coinciden en señalar un sesgo severo contra el grupo minoritario (tanto el DI de 0.333 como el EOD de -0.482 reprueban el comportamiento del modelo). Sin embargo, **no miden lo mismo**:
+
+- **Disparate Impact (DI):** mide la **paridad demográfica o de selección** (\(P(\hat{Y}=1 \mid \text{min}) / P(\hat{Y}=1 \mid \text{maj})\)), independientemente de si los individuos están calificados o no.
+
+- **Equal Opportunity Difference (EOD):** mide la **igualdad de oportunidad** comparando la Tasa de Verdaderos Positivos (\(\text{TPR}_{\text{min}} - \text{TPR}_{\text{maj}}\)), evaluando únicamente el rendimiento sobre el subconjunto de personas verdaderamente calificadas (\(\text{true\_label} = 1\)).
 
 **2. Calcula qué proporción de cada grupo está realmente calificada (`true_label = 1`). ¿La brecha de aceptación se explica por mérito?**
 
-> [Tu respuesta, con los números]
+**Cálculo con los datos de las matrices de confusión (dataset sesgado):**
+
+- **Grupo 0 (Mayoría):** 
+  - Calificados = TP + FN = 6 + 1 = 7.
+  - Total de registros = 12.
+  - Proporción de calificados = **58.33 %**.
+
+- **Grupo 1 (Minoría):**
+  - Calificados = TP + FN = 3 + 5 = 8.
+  - Total de registros = 12.
+  - Proporción de calificados = **66.67 %**.
+
+**Conclusión:** **No, la brecha no se explica por mérito.** El grupo minoritario tiene una proporción mayor de personas calificadas (66.67 % frente a 58.33 %), pero el modelo solo aceptó al 25.0 % del grupo minoritario frente al 75.0 % del grupo mayoritario. La brecha de aceptación refleja un sesgo sistemático del algoritmo y no una falta de cualificación.
 
 **3. ¿Cuántas personas calificadas del grupo 1 fueron rechazadas (FN)? ¿Qué implica en un caso real?**
 
-> [Tu respuesta]
+**5 personas calificadas del grupo 1 fueron rechazadas** (\(\text{FN} = 5\), lo que representa un 62.5 % de falsos negativos en ese grupo).
+
+**Implicación en un caso real (ej. crédito financiero o contratación laboral):** Implica una **denegación injusta de oportunidades y discriminación sistemática**. Personas que sí cumplen con los requisitos o perfil para el crédito/empleo son sistemáticamente excluidas por el algoritmo solo por pertenecer al grupo protegido, perpetuando barreras socioeconómicas y privando a la organización de contratar o prestar a candidatos aptos.
 
 **4. Compara el FPR de ambos grupos. ¿Qué dice sobre los estándares que aplica el modelo a cada uno?**
 
-> [Tu respuesta]
+**Comparación:**
+
+- **FPR Grupo 0 (Mayoría):** 60.0 % (\(\text{FP}=3, \text{TN}=2\)).
+- **FPR Grupo 1 (Minoría):** 0.0 % (\(\text{FP}=0, \text{TN}=4\)).
+
+**Interpretación:** Muestra una **asimetría de estándares o doble rasero riguroso**. Para el grupo mayoritario, el modelo es extremadamente laxo o "perdonador": el 60 % de los no calificados recibieron una aprobación. Para el grupo minoritario, el modelo aplica una política ultra-conservadora o punitiva (0 % de falsos positivos), exigiendo requisitos desproporcionados antes de otorgar una predicción positiva.
 
 **5. El accuracy global puede verse aceptable aunque el modelo sea inequitativo. ¿Por qué ocurre?**
 
-> [Tu respuesta]
+Ocurre porque la métrica de **Accuracy global** agrega el total de aciertos (TP + TN) sobre el total de datos, enmascarando las diferencias de distribución de errores entre los subgrupos. Un modelo puede compensar un pésimo recall en el grupo minoritario (\(\text{TPR}=37.5\%\)) con un buen comportamiento o un volumen dominante en el grupo mayoritario (\(\text{TPR}=85.7\%\)), manteniendo un accuracy general aceptable (en este caso 62.5 %) a costa de ignorar la discriminación interna.
 
 **6. El dataset tiene solo 12 registros por grupo. ¿Qué limitaciones tiene esta auditoría?**
 
-> [Tu respuesta]
+- **Alta variabilidad estadística e inestabilidad de métricas:** Con una muestra tan pequeña (\(N=24\)), un solo cambio en una predicción (1 registro) altera el DI y las tasas en un 8.3 %, lo que genera un margen de error muy amplio.
+
+- **Falta de representatividad e invalidez estadística:** No permite realizar pruebas de significancia estadística (como intervalos de confianza o pruebas *p-value*) para determinar si el sesgo detectado es intrínseco al modelo o producto del azar muestral.
 
 **7. Propón dos mitigaciones técnicas reales (no la simulada) y un riesgo de cada una.**
 
-> [Tu respuesta]
+1. **Optimización de Umbrales Post-procesamiento (Post-processing Thresholding / Equalized Odds Postprocessing):**
+   - **Descripción:** Ajustar de forma independiente los umbrales de decisión (\(\tau_{\text{min}}\) y \(\tau_{\text{maj}}\)) sobre las probabilidades predichas para cada grupo para igualar la TPR o las tasas de selección sin reentrenar el modelo.
+   - **Riesgo:** Puede implicar utilizar el atributo protegido directamente durante la inferencia para seleccionar el umbral, lo que en algunas legislaciones (como el Title VII en EE. UU.) se considera discriminación directa (*disparate treatment*).
+
+2. **Remuestreo / Re-sopesado Pre-procesamiento (Pre-processing Reweighing):**
+   - **Descripción:** Modificar la distribución de los datos de entrenamiento asignando pesos diferentes a los ejemplos de cada grupo (o remuestreando mediante *oversampling/undersampling*) para equilibrar la correlación entre la clase y el grupo protegido antes del entrenamiento.
+   - **Riesgo:** Puede reducir la precisión global del modelo (*accuracy trade-off*) o causar *overfitting* en las instancias del grupo minoritario que reciben pesos excesivos.
 
 ### C. Conclusión: auditoría vs. Model Card
 
 Compara los valores que escribiste en tu `MODEL_CARD.md` antes de ejecutar el script
 (tus hipótesis) con los obtenidos en la auditoría.
 
+## Tabla comparativa
+
 | Métrica                     | Hipótesis (antes) | Obtenido (auditoría) | ¿Coincide? |
 | --------------------------- | ----------------- | -------------------- | ---------- |
-| Accuracy global             | \_\_\_            | \_\_\_               | \_\_\_     |
-| Tasa de aprobación, grupo 0 | \_\_\_            | \_\_\_               | \_\_\_     |
-| Tasa de aprobación, grupo 1 | \_\_\_            | \_\_\_               | \_\_\_     |
-| Disparate Impact            | \_\_\_            | \_\_\_               | \_\_\_     |
+| Accuracy global             | 80.0 %            | 62.5 %               | No         |
+| Tasa de aprobación, grupo 0 | 70.0 %            | 75.0 %               | No         |
+| Tasa de aprobación, grupo 1 | 70.0 %            | 25.0 %               | No         |
+| Disparate Impact            | 1.000             | 0.333                | No         |
 
-**Conclusión (máx. 5 líneas):** ¿Qué te enseña esta comparación sobre llenar una Model Card con estimaciones frente a datos reales? ¿Es apto el modelo original para despliegue?
+### Conclusión (máx. 5 líneas)
 
-> [Tu conclusión]
+Llenar una Model Card con estimaciones teóricas oculta sesgos críticos y transmite una falsa sensación de equidad. La comparación demuestra que solo una auditoría cuantitativa sobre predicciones reales revela el impacto dispar real (\\(\text{DI}=0.333\\)). El modelo original no es apto para despliegue, ya que violaría la regla de los cuatro quintos y discriminaría sistemáticamente al grupo minoritario.
 
 ---
 
